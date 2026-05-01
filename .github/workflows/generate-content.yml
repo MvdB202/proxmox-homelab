@@ -1,4 +1,4 @@
-name: Generate New Article
+name: Generate New Article (Groq)
 
 on:
   schedule:
@@ -20,22 +20,21 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install openai python-slugify
+          pip install groq python-slugify
 
-      - name: Generate article
+      - name: Generate article using Groq API
         env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: |
           python3 << 'EOF'
           import os
-          import openai
+          from groq import Groq
           from datetime import datetime
           from slugify import slugify
           import random
 
-          openai.api_key = os.getenv("OPENAI_API_KEY")
+          client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-          # Categories for random selection
           categories = {
               "hardware": [
                   "HP ProDesk 400 G1 DM",
@@ -64,11 +63,9 @@ jobs:
               ]
           }
 
-          # Pick a random category + topic
           category = random.choice(list(categories.keys()))
           topic = random.choice(categories[category])
 
-          # Friendly prompt
           prompt = f"""
           Write a beginner-friendly article for a Proxmox home lab website.
           Topic: {topic}
@@ -81,23 +78,20 @@ jobs:
           - a friendly conclusion
           """
 
-          response = openai.chat.completions.create(
-              model="gpt-4o-mini",
+          response = client.chat.completions.create(
+              model="llama3-8b-8192",
               messages=[{"role": "user", "content": prompt}],
               temperature=0.7
           )
 
           article = response.choices[0].message.content
 
-          # Build filename
           date = datetime.utcnow().strftime("%Y-%m-%d")
           slug = slugify(topic)
           filename = f"content/{category}/{date}-{slug}.md"
 
-          # Ensure folder exists
           os.makedirs(f"content/{category}", exist_ok=True)
 
-          # Write file
           with open(filename, "w") as f:
               f.write(f"---\ntitle: \"{topic}\"\ndate: {date}\ndraft: false\n---\n\n")
               f.write(article)
