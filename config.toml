@@ -1,6 +1,7 @@
 baseURL = "/"
 languageCode = "en-us"
 title = "Proxmox Home Lab for Beginners"
+theme = "PaperMod"   # You can change this later if you want
 
 # Enable nice URLs
 canonifyURLs = true
