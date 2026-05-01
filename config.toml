@@ -51,9 +51,14 @@ summaryLength = 40
 [params]
   description = "A friendly, beginner-focused guide to building your own Proxmox home lab."
   author = "Marloes"
+  defaultTheme = "auto"
   show_reading_time = true
   show_share_buttons = false
   show_post_nav_links = true
   show_breadcrumbs = true
   date_format = "January 2, 2006"
 
+# Homepage info block
+[params.homeInfoParams]
+  Title = "Welcome to My Homelab"
+  Content = "Documenting my Proxmox setup, hardware and tutorials."
