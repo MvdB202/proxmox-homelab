@@ -1,0 +1,59 @@
+baseURL = "/"
+languageCode = "en-us"
+title = "Proxmox Home Lab for Beginners"
+theme = "ananke"   # You can change this later if you want
+
+# Enable nice URLs
+canonifyURLs = true
+
+# Make Hugo treat Markdown nicely
+enableEmoji = true
+enableGitInfo = true
+
+# Automatically create summaries
+summaryLength = 40
+
+# Use Goldmark (best Markdown engine)
+[markup]
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      unsafe = true   # allows HTML in Markdown
+
+# Main menu
+[menu]
+
+  [[menu.main]]
+    name = "Start Here"
+    url = "/start-here/"
+    weight = 1
+
+  [[menu.main]]
+    name = "Hardware"
+    url = "/hardware/"
+    weight = 2
+
+  [[menu.main]]
+    name = "Setups"
+    url = "/setups/"
+    weight = 3
+
+  [[menu.main]]
+    name = "Tutorials"
+    url = "/tutorials/"
+    weight = 4
+
+  [[menu.main]]
+    name = "Troubleshooting"
+    url = "/troubleshooting/"
+    weight = 5
+
+# Params for the theme
+[params]
+  description = "A friendly, beginner-focused guide to building your own Proxmox home lab."
+  author = "Marloes"
+  show_reading_time = true
+  show_share_buttons = false
+  show_post_nav_links = true
+  show_breadcrumbs = true
+  date_format = "January 2, 2006"
+
