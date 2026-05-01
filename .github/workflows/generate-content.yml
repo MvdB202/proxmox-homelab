@@ -1,0 +1,114 @@
+name: Generate New Article
+
+on:
+  schedule:
+    - cron: "0 7 * * *"   # Runs every day at 07:00
+  workflow_dispatch:       # Allows manual triggering
+
+jobs:
+  generate-article:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install openai python-slugify
+
+      - name: Generate article
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          python3 << 'EOF'
+          import os
+          import openai
+          from datetime import datetime
+          from slugify import slugify
+          import random
+
+          openai.api_key = os.getenv("OPENAI_API_KEY")
+
+          # Categories for random selection
+          categories = {
+              "hardware": [
+                  "HP ProDesk 400 G1 DM",
+                  "Dell OptiPlex 3050 Micro",
+                  "Lenovo Tiny M720q",
+                  "Minisforum UM790 Pro",
+                  "Beelink SER5"
+              ],
+              "setups": [
+                  "€150 Proxmox Starter Lab",
+                  "Silent Proxmox Lab",
+                  "Low-Power Proxmox Lab",
+                  "Proxmox + Home Assistant Setup"
+              ],
+              "tutorials": [
+                  "How to Install Proxmox (Beginner-Friendly)",
+                  "Proxmox Backups Explained Simply",
+                  "USB Passthrough in Proxmox",
+                  "LXC vs VM — Simple Explanation"
+              ],
+              "troubleshooting": [
+                  "Fixing No Network After Installing Proxmox",
+                  "USB Passthrough Not Working",
+                  "ZFS Using Too Much RAM",
+                  "VM Performance Issues"
+              ]
+          }
+
+          # Pick a random category + topic
+          category = random.choice(list(categories.keys()))
+          topic = random.choice(categories[category])
+
+          # Friendly prompt
+          prompt = f"""
+          Write a beginner-friendly article for a Proxmox home lab website.
+          Topic: {topic}
+          Tone: friendly, warm, encouraging, simple explanations.
+          Include:
+          - a short intro
+          - what the user needs
+          - step-by-step instructions
+          - common mistakes
+          - a friendly conclusion
+          """
+
+          response = openai.chat.completions.create(
+              model="gpt-4o-mini",
+              messages=[{"role": "user", "content": prompt}],
+              temperature=0.7
+          )
+
+          article = response.choices[0].message.content
+
+          # Build filename
+          date = datetime.utcnow().strftime("%Y-%m-%d")
+          slug = slugify(topic)
+          filename = f"content/{category}/{date}-{slug}.md"
+
+          # Ensure folder exists
+          os.makedirs(f"content/{category}", exist_ok=True)
+
+          # Write file
+          with open(filename, "w") as f:
+              f.write(f"---\ntitle: \"{topic}\"\ndate: {date}\ndraft: false\n---\n\n")
+              f.write(article)
+
+          print(f"Generated article: {filename}")
+          EOF
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "actions@github.com"
+          git add .
+          git commit -m "Automated article: $(date)" || echo "No changes to commit"
+          git push
