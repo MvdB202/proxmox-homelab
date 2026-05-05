@@ -38,9 +38,8 @@ CATEGORIES = {
 
 # Groq model fallback order
 MODEL_FALLBACKS = [
-    "llama3-8b-8192",
-    "llama3-70b-8192",
-    "mixtral-8x7b-32768"
+    "llama3-groq-8b-8192",
+    "llama3-groq-70b-8192"
 ]
 
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
