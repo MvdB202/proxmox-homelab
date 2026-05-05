@@ -24,7 +24,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install groq python-slugify
+          pip install groq python-slugify requests
 
       - name: Generate article
         run: python3 generate_article.py
