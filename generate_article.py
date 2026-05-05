@@ -1,5 +1,6 @@
 import os
 import random
+import requests
 from datetime import datetime
 from slugify import slugify
 from groq import Groq
@@ -36,13 +37,38 @@ CATEGORIES = {
     ]
 }
 
-# Groq model fallback order
-MODEL_FALLBACKS = [
-    "llama3-groq-8b-8192",
-    "llama3-groq-70b-8192"
-]
+API_KEY = os.getenv("GROQ_API_KEY")
+client = Groq(api_key=API_KEY)
 
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+# -----------------------------
+# FETCH AVAILABLE MODELS (REST)
+# -----------------------------
+
+def fetch_available_models():
+    url = "https://api.groq.com/openai/v1/models"
+    headers = {"Authorization": f"Bearer {API_KEY}"}
+
+    try:
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        data = response.json()
+
+        # Extract model IDs
+        models = [m["id"] for m in data.get("data", [])]
+
+        # Prefer Llama 3 models
+        preferred = [m for m in models if "llama" in m.lower()]
+
+        if preferred:
+            print("Available Llama models:", preferred)
+            return preferred
+
+        print("No Llama models found. Using all models:", models)
+        return models
+
+    except Exception as e:
+        print("Failed to fetch model list:", e)
+        return []
 
 # -----------------------------
 # SELECT TOPIC
@@ -55,7 +81,6 @@ date = datetime.utcnow().strftime("%Y-%m-%d")
 slug = slugify(topic)
 filename = f"content/{category}/{date}-{slug}.md"
 
-# Prevent duplicates
 if os.path.exists(filename):
     print(f"Skipping: {filename} already exists.")
     exit(0)
@@ -81,12 +106,18 @@ Include:
 """
 
 # -----------------------------
-# MODEL FALLBACK LOGIC
+# MODEL SELECTION
 # -----------------------------
+
+models = fetch_available_models()
+
+if not models:
+    print("No models available. Exiting.")
+    exit(1)
 
 article = None
 
-for model in MODEL_FALLBACKS:
+for model in models:
     try:
         print(f"Trying model: {model}")
         response = client.chat.completions.create(
@@ -98,7 +129,7 @@ for model in MODEL_FALLBACKS:
         print(f"Success with model: {model}")
         break
     except Exception as e:
-        print(f"Model {model} failed: {e}")
+        print(f"Model {model} failed:", e)
 
 if article is None:
     print("All models failed. Exiting.")
@@ -113,4 +144,3 @@ with open(filename, "w") as f:
     f.write(article)
 
 print(f"Generated article: {filename}")
-
