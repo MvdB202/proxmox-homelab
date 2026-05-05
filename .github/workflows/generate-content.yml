@@ -39,6 +39,4 @@ jobs:
           git add .
           git commit -m "Automated article $(date -u +"%Y-%m-%d")" || echo "No changes to commit"
 
-          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
           git push
-
