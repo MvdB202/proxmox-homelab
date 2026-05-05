@@ -41,7 +41,7 @@ API_KEY = os.getenv("GROQ_API_KEY")
 client = Groq(api_key=API_KEY)
 
 # -----------------------------
-# FETCH AVAILABLE MODELS (REST)
+# FETCH AVAILABLE CHAT MODELS
 # -----------------------------
 
 def fetch_available_models():
@@ -53,18 +53,20 @@ def fetch_available_models():
         response.raise_for_status()
         data = response.json()
 
-        # Extract model IDs
-        models = [m["id"] for m in data.get("data", [])]
+        all_models = [m["id"] for m in data.get("data", [])]
 
-        # Prefer Llama 3 models
-        preferred = [m for m in models if "llama" in m.lower()]
+        # Filter only real chat models (Llama 3, 8B or 70B)
+        chat_models = [
+            m for m in all_models
+            if "llama3" in m.lower() and ("8b" in m.lower() or "70b" in m.lower())
+        ]
 
-        if preferred:
-            print("Available Llama models:", preferred)
-            return preferred
+        if chat_models:
+            print("Available chat models:", chat_models)
+            return chat_models
 
-        print("No Llama models found. Using all models:", models)
-        return models
+        print("No chat models found. Raw model list:", all_models)
+        return []
 
     except Exception as e:
         print("Failed to fetch model list:", e)
@@ -106,13 +108,13 @@ Include:
 """
 
 # -----------------------------
-# MODEL SELECTION
+# MODEL SELECTION + FALLBACK
 # -----------------------------
 
 models = fetch_available_models()
 
 if not models:
-    print("No models available. Exiting.")
+    print("No valid chat models available. Exiting.")
     exit(1)
 
 article = None
@@ -144,3 +146,4 @@ with open(filename, "w") as f:
     f.write(article)
 
 print(f"Generated article: {filename}")
+
