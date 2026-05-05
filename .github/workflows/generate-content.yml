@@ -1,16 +1,17 @@
-name: Generate New Article (Groq)
+name: generate-article
 
 on:
   schedule:
-    - cron: "0 7 * * *"   # Runs every day at 07:00
-  workflow_dispatch:       # Allows manual triggering
+    - cron: "0 8 * * *"   # Every day at 08:00 UTC
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
 
 jobs:
-  generate-article:
+  build:
     runs-on: ubuntu-latest
-    
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       - name: Checkout repository
@@ -25,87 +26,13 @@ jobs:
         run: |
           pip install groq python-slugify
 
-      - name: Generate article using Groq API
-        env:
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-        run: |
-          python3 << 'EOF'
-          import os
-          from groq import Groq
-          from datetime import datetime
-          from slugify import slugify
-          import random
-
-          client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-
-          categories = {
-              "hardware": [
-                  "HP ProDesk 400 G1 DM",
-                  "Dell OptiPlex 3050 Micro",
-                  "Lenovo Tiny M720q",
-                  "Minisforum UM790 Pro",
-                  "Beelink SER5"
-              ],
-              "setups": [
-                  "€150 Proxmox Starter Lab",
-                  "Silent Proxmox Lab",
-                  "Low-Power Proxmox Lab",
-                  "Proxmox + Home Assistant Setup"
-              ],
-              "tutorials": [
-                  "How to Install Proxmox (Beginner-Friendly)",
-                  "Proxmox Backups Explained Simply",
-                  "USB Passthrough in Proxmox",
-                  "LXC vs VM — Simple Explanation"
-              ],
-              "troubleshooting": [
-                  "Fixing No Network After Installing Proxmox",
-                  "USB Passthrough Not Working",
-                  "ZFS Using Too Much RAM",
-                  "VM Performance Issues"
-              ]
-          }
-
-          category = random.choice(list(categories.keys()))
-          topic = random.choice(categories[category])
-
-          prompt = f"""
-          Write a beginner-friendly article for a Proxmox home lab website.
-          Topic: {topic}
-          Tone: friendly, warm, encouraging, simple explanations.
-          Include:
-          - a short intro
-          - what the user needs
-          - step-by-step instructions
-          - common mistakes
-          - a friendly conclusion
-          """
-
-          response = client.chat.completions.create(
-              model="llama3-8b-8192-latest",
-              messages=[{"role": "user", "content": prompt}],
-              temperature=0.7
-          )
-
-          article = response.choices[0].message.content
-
-          date = datetime.utcnow().strftime("%Y-%m-%d")
-          slug = slugify(topic)
-          filename = f"content/{category}/{date}-{slug}.md"
-
-          os.makedirs(f"content/{category}", exist_ok=True)
-
-          with open(filename, "w") as f:
-              f.write(f"---\ntitle: \"{topic}\"\ndate: {date}\ndraft: false\n---\n\n")
-              f.write(article)
-
-          print(f"Generated article: {filename}")
-          EOF
+      - name: Generate article
+        run: python3 generate_article.py
 
       - name: Commit and push changes
         run: |
           git config --global user.name "github-actions"
-          git config --global user.email "actions@github.com"
+          git config --global user.email "github-actions@github.com"
           git add .
-          git commit -m "Automated article: $(date)" || echo "No changes to commit"
+          git commit -m "Automated article $(date -u +"%Y-%m-%d")" || echo "No changes to commit"
           git push
